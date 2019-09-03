@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 #coding: utf8
 
+import re
 import discord
 import youtube_dl
 from gtts import gTTS
@@ -85,7 +86,25 @@ class Voice(object):
             return
         await self.channel.disconnect()
 
-    async def tts(self, text, lang="fr"):
+    async def clean(self, catholingo, text):
+        for occurence in re.findall('<@([0-9]+)>', text):
+            user = await catholingo.get_user_by_id(occurence)
+            if not user:
+                continue
+            name = user.display_name
+            text = text.replace('<@'+occurence+'>', name)
+        for occurence in re.findall('<@!([0-9]+)>', text):
+            user = await catholingo.get_user_by_id(occurence)
+            if not user:
+                continue
+            name = user.display_name
+            text = text.replace('<@!'+occurence+'>', name)
+        return text
+
+    async def tts(self, catholingo, text, lang="fr"):
+        if self.channel is None or not self.channel.is_connected():
+            return
+        text = await self.clean(catholingo, text)
         temp_file = "./tts.mp3"
         with open(temp_file, 'wb') as f:
             gTTS(text, lang=lang).write_to_fp(f)
@@ -108,8 +127,8 @@ class Voice(object):
 
     async def on_catholingo(self, catholingo, message):
         if message.author.name == catholingo.user.name:
-            await self.tts(message.content)
+            await self.tts(catholingo, message.content)
 
     async def on_tts(self, catholingo, message, *args, **__):
         msg = " ".join(args)
-        await self.tts(msg)
+        await self.tts(catholingo, msg)

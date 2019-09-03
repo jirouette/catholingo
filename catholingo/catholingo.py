@@ -15,6 +15,13 @@ class CathoLingo(discord.Client):
         self.patterns = patterns or dict()
         self.parsers = parsers or list()
 
+    async def get_user_by_id(self, ID):
+        ID = int(ID)
+        user = self.get_user(ID)
+        if not user:
+            user = await self.fetch_user(ID)
+        return user
+
     async def on_ready(self):
         print('Now connected as{0.user.name} ! '.format(self))
         print('Ready. ')
@@ -42,6 +49,10 @@ class CathoLingo(discord.Client):
         for parser in self.parsers:
             await parser(self, message)
 
+
+async def say(catholingo, message, *args, **__):
+    await message.channel.send(" ".join(args))
+
 if __name__ == '__main__':
     print("Starting CathoLingo...")
     voice = Voice()
@@ -52,7 +63,8 @@ if __name__ == '__main__':
         'pause': voice.pause,
         'resume': voice.resume,
         'stop': voice.stop,
-        'tts': voice.on_tts
+        'tts': voice.on_tts,
+        'say': say
     }
     patterns = {
         voice.YOUTUBE_PATTERN: voice.on_youtube,
