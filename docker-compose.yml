@@ -1,0 +1,8 @@
+version: '2'
+services:
+    catholingo:
+      container_name: "catholingo"
+      build: .
+      restart: always
+      env_file:
+        - .env

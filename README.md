@@ -15,6 +15,7 @@ docker-composer up -d
 Install the dependencies of this project : 
 
 ```bash
+apt-get install libffi-dev libopus-dev ffmpeg
 pip3 install
 ```
 
