@@ -1,8 +1,24 @@
 version: '2'
+volumes:
+    catholingodatabase:
 services:
     catholingo:
       container_name: "catholingo"
       build: .
       restart: always
+      links:
+        - mysql
+      env_file:
+        - .env
+      environment:
+        DB_HOST: mysql
+    mysql:
+      security_opt:
+        - seccomp:unconfined
+      image: mysql
+      container_name: "catholingo_db"
+      restart: always
+      volumes:
+        - catholingodatabase:/var/lib/mysql
       env_file:
         - .env
