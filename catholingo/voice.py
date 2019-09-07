@@ -59,7 +59,6 @@ class Voice(object):
             discord.opus.load_opus("libopus.so")
 
     async def join(self, catholingo, message, *_, **__):
-        print("They asked me to join a voice chan")
         for channel in message.channel.guild.voice_channels:
             for member in channel.members:
                 if member == message.author:
@@ -86,25 +85,10 @@ class Voice(object):
             return
         await self.channel.disconnect()
 
-    async def clean(self, catholingo, text):
-        for occurence in re.findall('<@([0-9]+)>', text):
-            user = await catholingo.get_user_by_id(occurence)
-            if not user:
-                continue
-            name = user.display_name
-            text = text.replace('<@'+occurence+'>', name)
-        for occurence in re.findall('<@!([0-9]+)>', text):
-            user = await catholingo.get_user_by_id(occurence)
-            if not user:
-                continue
-            name = user.display_name
-            text = text.replace('<@!'+occurence+'>', name)
-        return text
-
     async def tts(self, catholingo, text, lang="fr"):
         if self.channel is None or not self.channel.is_connected():
             return
-        text = await self.clean(catholingo, text)
+        text = text.replace("@", "")
         temp_file = "./tts.mp3"
         with open(temp_file, 'wb') as f:
             gTTS(text, lang=lang).write_to_fp(f)
@@ -113,6 +97,8 @@ class Voice(object):
         self.channel.play(source, after=lambda e: print('Player error: %s' % e) if e else None)
 
     async def on_youtube(self, catholingo, message):
+        if self.channel is None or not self.channel.is_connected():
+            return
         if self.YOUTUBE_PATTERN not in message.content:
             return
         URL = None
@@ -126,9 +112,11 @@ class Voice(object):
         self.channel.play(player, after=lambda e: print('Player error: %s' % e) if e else None)
 
     async def on_catholingo(self, catholingo, message):
-        if message.author.name == catholingo.user.name:
-            await self.tts(catholingo, message.content)
+        if self.YOUTUBE_PATTERN in message.content:
+            return
+        if catholingo.user.name in message.author.name:
+            await self.tts(catholingo, message.clean_content)
 
     async def on_tts(self, catholingo, message, *args, **__):
-        msg = " ".join(args)
+        msg = " ".join(message.clean_content.split()[1:])
         await self.tts(catholingo, msg)
