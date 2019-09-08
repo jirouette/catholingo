@@ -30,6 +30,7 @@ class Word(Model):
     word = CharField(max_length=500)
     next_word = CharField(null=True, max_length=500)
     next_next_word = CharField(null=True, max_length=500)
+    is_nsfw = BooleanField(null=False, default=False)
 
 def init():
     create_tables()
@@ -93,7 +94,8 @@ class Sentence(object):
                 previous_word=text[i-1][:500] if i > 0 else None,
                 word=word[:500],
                 next_word=text[i+1][:500] if i < len(text)-1 else None,
-                next_next_word=text[i+2][:500] if i < len(text)-2 else None)
+                next_next_word=text[i+2][:500] if i < len(text)-2 else None,
+                is_nsfw=message.channel.is_nsfw())
             entries.append(entry)
         if not no_save:
             Word.insert_many(entries).execute()
@@ -170,24 +172,27 @@ class Sentence(object):
     @classmethod
     async def query(cls, catholingo, message, *_, **__):
         await message.channel.trigger_typing()
-        await message.channel.send(cls.generator())
+        conditions = True
+        if not message.channel.is_nsfw():
+            conditions = Word.is_nsfw == False
+        await message.channel.send(cls.generator(conditions))
 
     @classmethod
     async def speakfor(cls, catholingo, message, *arg, **__):
         if len(arg) < 1:
             return
-
         await message.channel.trigger_typing()
+        ID = 0
+        conditions = True
+        if not message.channel.is_nsfw():
+            conditions = Word.is_nsfw == False
         try:
-            if '<@' in arg[0]:
-                ID = int(arg[0].replace('<@', '').replace('!', '').replace('>', ''))
-                payload = cls.generator(Word.author_id == ID)
-            else:
-                ID = 0
-                username = " ".join(arg)
-                payload = cls.generator(Word.author_username == username | Word.author_display_name == username)
+            ID = int(arg[0].replace('<@', '').replace('!', '').replace('>', ''))
+            conditions = (Word.author_id == ID) & conditions
         except:
-            return
+            username = " ".join(arg)
+            conditions = ((Word.author_username == username) | (Word.author_display_name == username)) & conditions
+        payload = cls.generator(conditions)
         if payload == "No result":
             return await message.channel.send(payload)
         await catholingo.send_as(payload, message.channel, ID)
@@ -196,24 +201,32 @@ class Sentence(object):
     async def speakfrom(cls, catholingo, message, *arg, **__):
         if len(arg) < 1:
             return
-
         await message.channel.trigger_typing()
+        conditions = True
+        if not message.channel.is_nsfw():
+            conditions = Word.is_nsfw == False
         try:
             ID = int(arg[0].replace('<#', '').replace('!', '').replace('>', ''))
         except:
             return
-        await message.channel.send(cls.generator(Word.channel_id == ID))
+        await message.channel.send(cls.generator((Word.channel_id == ID) & conditions))
 
     @classmethod
     async def startwith(cls, catholingo, message, *arg, **__):
         await message.channel.trigger_typing()
-        payload = cls.generator(ordered_conditions=[Word.word == word for word in arg])
+        conditions = True
+        if not message.channel.is_nsfw():
+            conditions = Word.is_nsfw == False
+        payload = cls.generator(conditions, ordered_conditions=[Word.word == word for word in arg])
         await message.channel.send(payload)
 
     @classmethod
     async def endwith(cls, catholingo, message, *arg, **__):
         await message.channel.trigger_typing()
-        payload = cls.reverse_generator(ordered_conditions=[Word.word == word for word in arg][::-1])
+        conditions = True
+        if not message.channel.is_nsfw():
+            conditions = Word.is_nsfw == False
+        payload = cls.reverse_generator(conditions, ordered_conditions=[Word.word == word for word in arg][::-1])
         await message.channel.send(payload)
 
     @classmethod
@@ -230,4 +243,4 @@ class Sentence(object):
                 previous_message = message
                 finished = False
             Word.insert_many(entries).execute()
-        message.channel.send("Finished ! :3")
+        await message.channel.send("Finished ! :3")
