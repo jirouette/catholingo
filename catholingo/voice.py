@@ -88,7 +88,7 @@ class Voice(object):
     async def tts(self, catholingo, text, lang="fr"):
         if self.channel is None or not self.channel.is_connected():
             return
-        text = text.replace("@", "")
+        text = text.replace("@", "").lower()
         temp_file = "./tts.mp3"
         with open(temp_file, 'wb') as f:
             gTTS(text, lang=lang).write_to_fp(f)
