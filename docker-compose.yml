@@ -1,11 +1,14 @@
 version: '2'
 volumes:
     catholingodatabase:
+    catholingostickers:
 services:
     catholingo:
       container_name: "catholingo"
       build: .
       restart: always
+      volumes:
+        - catholingostickers:/var/stickers
       links:
         - mysql
       env_file:

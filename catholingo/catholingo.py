@@ -5,6 +5,7 @@ import os
 import discord
 from sentence import Sentence, init as dbinit
 from voice import Voice
+from sticker import Sticker
 import datetime
 
 WEBHOOKS = dict()
@@ -25,16 +26,16 @@ class CathoLingo(discord.Client):
         print('Now connected as {0.user.name}'.format(self))
         print('Ready. ')
 
-    async def send_as(self, message, channel, ID):
+    async def send_as(self, message, channel, ID, *arg, **kwargs):
         user = self.get_user(ID)
         try:
             if not user:
                 user = await self.fetch_user(ID)
             URL = WEBHOOKS[channel.id]
         except:
-            return await channel.send(message)
+            return await channel.send(message, *arg, **kwargs)
         webhook = discord.Webhook.from_url(URL, adapter=discord.RequestsWebhookAdapter())
-        webhook.send(message, username=user.display_name + " (CathoLingo)", avatar_url=user.avatar_url)
+        webhook.send(message, *arg, username=user.display_name + " (CathoLingo)", avatar_url=user.avatar_url, **kwargs)
 
     async def on_message(self, message):
         message.content = message.content.replace("<@!", "<@")
@@ -103,6 +104,10 @@ if __name__ == '__main__':
         'speakfrom': Sentence.speakfrom,
         'startwith': Sentence.startwith,
         'endwith': Sentence.endwith,
+        'add_sticker': Sticker.add_sticker,
+        'list_stickers': Sticker.list_stickers,
+        'remove_sticker': Sticker.remove_sticker,
+        'sticker': Sticker.sticker,
     }
     patterns = {
         voice.YOUTUBE_PATTERN: voice.on_youtube,
