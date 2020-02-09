@@ -68,7 +68,7 @@ class connection(object):
 
 class Sentence(object):
     @classmethod
-    async def save(cls, catholingo, message, no_save=False):
+    async def save(cls, catholingo, message, no_save=False, no_query=False):
         if not message.content:
             return []
         if message.content[0:2] not in ["!w", "!m"] and message.content[0] in [catholingo.COMMAND_PREFIX, catholingo.COMMENT_PREFIX]:
@@ -76,7 +76,7 @@ class Sentence(object):
         if catholingo.user.name in message.author.name or "Jewvenden" in message.author.name:
             return []
 
-        if catholingo.user in message.mentions or catholingo.user.name.lower() in message.content.lower():
+        if not no_query and (catholingo.user in message.mentions or catholingo.user.name.lower() in message.content.lower()):
             await cls.query(catholingo, message)
 
         text = message.content.split()
@@ -104,7 +104,7 @@ class Sentence(object):
     @classmethod
     async def edit(cls, catholingo, before, after):
         await cls.delete(catholingo, before)
-        await cls.save(catholingo, after)
+        await cls.save(catholingo, after, no_query=True)
 
     @classmethod
     async def delete(cls, catholingo, message):
@@ -239,7 +239,7 @@ class Sentence(object):
             finished = True
             entries = []
             async for message in channel.history(after=previous_message, oldest_first=True):
-                entries += await cls.save(catholingo, message, no_save=True)
+                entries += await cls.save(catholingo, message, no_save=True, no_query=True)
                 previous_message = message
                 finished = False
             Word.insert_many(entries).execute()
