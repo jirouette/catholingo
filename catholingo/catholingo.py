@@ -108,11 +108,12 @@ if __name__ == '__main__':
         'list_stickers': Sticker.list_stickers,
         'remove_sticker': Sticker.remove_sticker,
         'sticker': Sticker.sticker,
+        's': Sticker.sticker,
     }
     patterns = {
         voice.YOUTUBE_PATTERN: voice.on_youtube,
     }
-    on_message = [voice.on_catholingo, Sentence.save]
+    on_message = [voice.on_catholingo, Sentence.save, Sticker.on_message]
     on_edit = [Sentence.edit]
     on_delete = [Sentence.delete]
 

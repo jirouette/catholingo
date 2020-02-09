@@ -8,6 +8,8 @@ import os
 STICKER_DIRECTORY = os.environ.get("STICKER_DIRECTORY", "/var/stickers")
 
 class Sticker(object):
+    USERS = {}
+
     @staticmethod
     def clean_sticker_name(sticker_name):
         return sticker_name.replace('..', '').replace('/', '').replace('\\', '')
@@ -29,6 +31,7 @@ class Sticker(object):
         file = message.attachments[0]
         await file.save(open(path+"/"+file.filename, "wb"))
         await message.channel.send("👌")
+        cls.reload_stickers(userID)
 
     @classmethod
     async def sticker(cls, catholingo, message, *arg, **__):
@@ -77,3 +80,26 @@ class Sticker(object):
             await message.channel.send("Could not remove sticker 😔")
             return
         await message.channel.send("👌")
+        cls.reload_stickers(userID)
+
+    @classmethod
+    def reload_stickers(cls, userID):
+        path = STICKER_DIRECTORY+"/"+userID
+        try:
+            cls.USERS[userID] = os.listdir(path)
+        except:
+            cls.USERS[userID] = list()
+
+    @classmethod
+    async def on_message(cls, catholingo, message):
+        userID = str(message.author.id)
+        stickers = cls.USERS.get(userID, None)
+        if stickers is None:
+            cls.reload_stickers(userID)
+            stickers = cls.USERS.get(userID, list())
+        patterns = ['<%s>', ':%s:']
+        msg = message.content.strip()
+        for sticker in stickers:
+            for pattern in patterns:
+                if msg == (pattern % sticker):
+                    await cls.sticker(catholingo, message, sticker)
